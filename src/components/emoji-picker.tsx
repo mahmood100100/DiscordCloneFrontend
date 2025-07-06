@@ -16,16 +16,19 @@ interface EmojiPickerProps {
 const EmojiPicker = ({onChange} : EmojiPickerProps) => {
     const {resolvedTheme} = useTheme();
     const [isMobile, setIsMobile] = useState(false);
+    const [isSmallScreen, setIsSmallScreen] = useState(false);
 
     useEffect(() => {
-        const checkMobile = () => {
-            setIsMobile(window.innerWidth < 768);
+        const checkScreenSize = () => {
+            const width = window.innerWidth;
+            setIsMobile(width < 768);
+            setIsSmallScreen(width < 480);
         };
         
-        checkMobile();
-        window.addEventListener('resize', checkMobile);
+        checkScreenSize();
+        window.addEventListener('resize', checkScreenSize);
         
-        return () => window.removeEventListener('resize', checkMobile);
+        return () => window.removeEventListener('resize', checkScreenSize);
     }, []);
 
     return (
@@ -35,14 +38,17 @@ const EmojiPicker = ({onChange} : EmojiPickerProps) => {
             </PopoverTrigger>
             <PopoverContent 
                 side={isMobile ? 'bottom' : 'top'} 
-                align={isMobile ? 'center' : 'end'}
+                align={isSmallScreen ? 'start' : (isMobile ? 'center' : 'end')}
                 sideOffset={isMobile ? 5 : 10} 
                 alignOffset={0}
                 className='bg-transparent border-none shadow-none drop-shadow-none p-0'
                 style={{
-                    maxWidth: isMobile ? '95vw' : 'min(350px, 90vw)',
-                    maxHeight: isMobile ? '50vh' : 'min(400px, 60vh)',
-                    width: isMobile ? '95vw' : 'auto'
+                    maxWidth: isSmallScreen ? '99vw' : (isMobile ? '98vw' : 'min(350px, 90vw)'),
+                    maxHeight: isSmallScreen ? '40vh' : (isMobile ? '45vh' : 'min(400px, 60vh)'),
+                    width: isSmallScreen ? '99vw' : (isMobile ? '98vw' : 'auto'),
+                    left: isSmallScreen ? '0.5vw' : (isMobile ? '1vw' : 'auto'),
+                    right: isSmallScreen ? '0.5vw' : (isMobile ? '1vw' : 'auto'),
+                    transform: isSmallScreen ? 'translateX(0)' : 'none'
                 }}
             >
                <Picker 
