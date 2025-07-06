@@ -40,8 +40,8 @@ import {
   DropdownMenuContent,
 } from "@/components/ui/dropdown-menu";
 import { Loader2, MoreVertical, Trash, Pencil } from "lucide-react";
-import { MemberRole } from "@/types/member";
 import { RootState } from "@/redux/store";
+import { usePermissions } from "@/hooks/use-permissions";
 
 const ChannelsModal = () => {
   const profile = useSelector((state: RootState) => state.auth.user?.profile);
@@ -54,13 +54,15 @@ const ChannelsModal = () => {
   const reduxServer = useSelector((state: RootState) =>
     state.server.servers.find((server) => server.id === serverId)
   );
-  const profileMember = reduxServer?.members.find(
-    (member) => member.profileId === profile?.id
-  );
   const isModalOpen = isOpen && type === "channels";
   const [loadingId, setLoadingId] = React.useState("");
   const [renameModalOpen, setRenameModalOpen] = React.useState(false);
   const [channelToRename, setChannelToRename] = React.useState<Channel | null>(null);
+
+  const { 
+    canCreateChannel, 
+    canModifySpecificChannel 
+  } = usePermissions(serverId);
 
   const channelForm = useForm({
     resolver: zodResolver(channelCreationSchema),
@@ -79,6 +81,11 @@ const ChannelsModal = () => {
   };
 
   const onSubmit = async (values: z.infer<typeof channelCreationSchema>) => {
+    if (!canCreateChannel()) {
+      toast.error("You don't have permission to create channels");
+      return;
+    }
+
     try {
       if (!profile?.id) {
         toast.error("Profile ID not found. Please try again.");
@@ -106,8 +113,9 @@ const ChannelsModal = () => {
       } else {
         toast.error(response.error || "Channel creation failed. Please try again.");
       }
-    } catch (error: any) {
-      toast.error(error.message || "Something went wrong. Please try again later.");
+    } catch (error: unknown) {
+      const errorMessage = error instanceof Error ? error.message : "Something went wrong. Please try again later.";
+      toast.error(errorMessage);
     }
   };
 
@@ -116,16 +124,14 @@ const ChannelsModal = () => {
     channelId: string,
     serverId: string
   ) => {
+    const channel = reduxServer?.channels.find(c => c.id === channelId);
+    if (!channel || !canModifySpecificChannel(channel)) {
+      toast.error("You don't have permission to delete this channel");
+      return;
+    }
+
     try {
       setLoadingId(channelId);
-
-      if (
-        MemberRole[profileMember?.role ?? 2] !== "ADMIN" &&
-        requesterProfileId !== profile?.id
-      ) {
-        toast.error("You can only delete channels you created.");
-        return;
-      }
 
       const response = await deleteChannelApiCall(requesterProfileId, channelId, serverId);
 
@@ -142,14 +148,21 @@ const ChannelsModal = () => {
       } else {
         toast.error(response.error || "Failed to delete channel.");
       }
-    } catch (error: any) {
-      toast.error(error.message || "Something went wrong while deleting the channel.");
+    } catch (error: unknown) {
+      const errorMessage = error instanceof Error ? error.message : "Something went wrong while deleting the channel.";
+      toast.error(errorMessage);
     } finally {
       setLoadingId("");
     }
   };
 
   const handleUpdateChannelName = async (channelId: string, newName: string) => {
+    const channel = reduxServer?.channels.find(c => c.id === channelId);
+    if (!channel || !canModifySpecificChannel(channel)) {
+      toast.error("You don't have permission to edit this channel");
+      return;
+    }
+
     try {
       setLoadingId(channelId);
 
@@ -175,8 +188,9 @@ const ChannelsModal = () => {
       } else {
         toast.error(response.error || "Failed to update channel name.");
       }
-    } catch (error: any) {
-      toast.error(error.message || "Something went wrong while updating the channel name.");
+    } catch (error: unknown) {
+      const errorMessage = error instanceof Error ? error.message : "Something went wrong while updating the channel name.";
+      toast.error(errorMessage);
     } finally {
       setLoadingId("");
       setRenameModalOpen(false);
@@ -197,8 +211,8 @@ const ChannelsModal = () => {
 
         <div className="px-2 mt-4 max-h-[170px] overflow-y-auto scrollbar-thin scrollbar-thumb-zinc-500 scrollbar-track-white rounded-md border border-zinc-200">
           {reduxServer?.channels.map((channel: Channel) => {
-            const isCreator = channel.profileId === profile?.id;
             const isGeneralChannel = channel.name.toLowerCase() === "general";
+            const canModify = canModifySpecificChannel(channel);
 
             return (
               <div
@@ -215,38 +229,36 @@ const ChannelsModal = () => {
                   </div>
                 </div>
 
-                {!isGeneralChannel &&
-                  (isCreator || MemberRole[profileMember?.role ?? 2] === "ADMIN") &&
-                  loadingId !== channel.id && (
-                    <DropdownMenu>
-                      <DropdownMenuTrigger>
-                        <MoreVertical className="h-4 w-4 text-zinc-500 cursor-pointer" />
-                      </DropdownMenuTrigger>
-                      <DropdownMenuContent side="left" className="w-48">
+                {!isGeneralChannel && canModify && loadingId !== channel.id && (
+                  <DropdownMenu>
+                    <DropdownMenuTrigger>
+                      <MoreVertical className="h-4 w-4 text-zinc-500 cursor-pointer" />
+                    </DropdownMenuTrigger>
+                    <DropdownMenuContent side="left" className="w-48">
 
-                        <DropdownMenuItem
-                          onClick={() => {
-                            setChannelToRename(channel);
-                            setRenameModalOpen(true);
-                          }}
-                          className="text-blue-500 hover:text-blue-600 focus:text-blue-600"
-                        >
-                          <Pencil className="h-4 w-4 mr-2" />
-                          Edit Channel
-                        </DropdownMenuItem>
+                      <DropdownMenuItem
+                        onClick={() => {
+                          setChannelToRename(channel);
+                          setRenameModalOpen(true);
+                        }}
+                        className="text-blue-500 hover:text-blue-600 focus:text-blue-600"
+                      >
+                        <Pencil className="h-4 w-4 mr-2" />
+                        Edit Channel
+                      </DropdownMenuItem>
 
-                        <DropdownMenuItem
-                          onClick={() =>
-                            handleDeleteChannel(profile?.id || "", channel.id, serverId || "")
-                          }
-                          className="text-red-500 hover:text-red-600 focus:text-red-600"
-                        >
-                          <Trash className="h-4 w-4 mr-2" />
-                          Delete Channel
-                        </DropdownMenuItem>
-                      </DropdownMenuContent>
-                    </DropdownMenu>
-                  )}
+                      <DropdownMenuItem
+                        onClick={() =>
+                          handleDeleteChannel(profile?.id || "", channel.id, serverId || "")
+                        }
+                        className="text-red-500 hover:text-red-600 focus:text-red-600"
+                      >
+                        <Trash className="h-4 w-4 mr-2" />
+                        Delete Channel
+                      </DropdownMenuItem>
+                    </DropdownMenuContent>
+                  </DropdownMenu>
+                )}
                 {loadingId === channel.id && (
                   <Loader2 className="animate-spin text-zinc-500 ml-auto w-4 h-4" />
                 )}
@@ -303,70 +315,68 @@ const ChannelsModal = () => {
           </DialogContent>
         </Dialog>
 
-        {/* Create New Channel Section */}
-        <div className="px-6 pb-6 pt-4 border-t border-zinc-200">
-          <h3 className="text-xl font-semibold text-center mb-6">Create a New Channel</h3>
-          <Form {...channelForm}>
-            <form onSubmit={channelForm.handleSubmit(onSubmit)} className="space-y-4">
-              {/* Channel Name Field */}
-              <FormField
-                control={channelForm.control}
-                name="name"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Channel Name</FormLabel>
-                    <FormControl>
-                      <Input
-                        placeholder="Enter channel name"
-                        {...field}
-                        disabled={isLoading}
-                        className="border border-zinc-300 bg-zinc-100 focus-visible:ring-indigo-500 focus-visible:ring-offset-0 text-black w-full p-2 rounded-md"
-                      />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
+        {canCreateChannel() && (
+          <div className="px-6 pb-6 pt-4 border-t border-zinc-200">
+            <h3 className="text-xl font-semibold text-center mb-6">Create a New Channel</h3>
+            <Form {...channelForm}>
+              <form onSubmit={channelForm.handleSubmit(onSubmit)} className="space-y-4">
+                <FormField
+                  control={channelForm.control}
+                  name="name"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Channel Name</FormLabel>
+                      <FormControl>
+                        <Input
+                          placeholder="Enter channel name"
+                          {...field}
+                          disabled={isLoading}
+                          className="border border-zinc-300 bg-zinc-100 focus-visible:ring-indigo-500 focus-visible:ring-offset-0 text-black w-full p-2 rounded-md"
+                        />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
 
-              {/* Channel Type Field */}
-              <FormField
-                control={channelForm.control}
-                name="type"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Channel Type</FormLabel>
-                    <FormControl>
-                      <select
-                        {...field}
-                        onChange={(e) => field.onChange(Number(e.target.value) as ChannelType)}
-                        disabled={isLoading}
-                        className="border border-zinc-300 bg-zinc-100 focus-visible:ring-indigo-500 focus-visible:ring-offset-0 text-black w-full p-2 rounded-md"
-                      >
-                        <option value={0}>Text</option>
-                        <option value={1}>Voice</option>
-                        <option value={2}>Video</option>
-                      </select>
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
+                <FormField
+                  control={channelForm.control}
+                  name="type"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Channel Type</FormLabel>
+                      <FormControl>
+                        <select
+                          {...field}
+                          onChange={(e) => field.onChange(Number(e.target.value) as ChannelType)}
+                          disabled={isLoading}
+                          className="border border-zinc-300 bg-zinc-100 focus-visible:ring-indigo-500 focus-visible:ring-offset-0 text-black w-full p-2 rounded-md"
+                        >
+                          <option value={0}>Text</option>
+                          <option value={1}>Voice</option>
+                          <option value={2}>Video</option>
+                        </select>
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
 
-              {/* Submit Button */}
-              <DialogFooter>
-                <Button
-                variant="primery"
-                  type="submit"
-                  disabled={isLoading}
-                  className="w-full bg-indigo-500 hover:bg-indigo-400 transition-colors"
-                >
-                  {isLoading ? <Loader2 className="animate-spin h-4 w-4 mr-2" /> : null}
-                  Create Channel
-                </Button>
-              </DialogFooter>
-            </form>
-          </Form>
-        </div>
+                <DialogFooter>
+                  <Button
+                  variant="primery"
+                    type="submit"
+                    disabled={isLoading}
+                    className="w-full bg-indigo-500 hover:bg-indigo-400 transition-colors"
+                  >
+                    {isLoading ? <Loader2 className="animate-spin h-4 w-4 mr-2" /> : null}
+                    Create Channel
+                  </Button>
+                </DialogFooter>
+              </form>
+            </Form>
+          </div>
+        )}
       </DialogContent>
     </Dialog>
   );

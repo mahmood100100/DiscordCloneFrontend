@@ -32,7 +32,7 @@ const SettingsLayout = ({ children }: SettingsLayoutProps) => {
             </div>
           </div>
         </div>
-        <div className="flex-1 bg-white dark:bg-[#313338] flex items-center justify-center overflow-hidden px-3">
+        <div className="flex-1 bg-white dark:bg-[#313338] overflow-y-auto px-3">
           {children}
         </div>
       </div>

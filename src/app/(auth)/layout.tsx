@@ -4,10 +4,11 @@ import { useSelector } from "react-redux";
 import { useRouter } from "next/navigation";
 import SplashScreen from "@/components/splash-screen";
 import { useAuth } from "@/hooks/use-auth";
+import { RootState } from "@/redux/store";
 
 const AuthLayout = ({ children }: { children: React.ReactNode }) => {
   const router = useRouter();
-  const { accessToken, isInitialized } = useSelector((state: any) => state.auth);
+  const { accessToken, isInitialized } = useSelector((state: RootState) => state.auth);
 
   useAuth();
 

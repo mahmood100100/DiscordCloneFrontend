@@ -217,7 +217,6 @@ const ChatItem = ({
     setNewFile(undefined);
     setExistingFileRemoved(false);
   };
-  console.log(content , fileUrl)
   return (
     <div className="relative group flex items-start hover:bg-black/5 p-4 transition w-full">
       <div className="flex gap-x-3 items-start w-full">

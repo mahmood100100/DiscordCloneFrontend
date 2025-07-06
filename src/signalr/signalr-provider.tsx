@@ -10,6 +10,14 @@ import { useServerNotifications } from "./server-notifications";
 import { useMessageNotifications } from "./message-notifications";
 import { useDMNotifications } from "./direct-message-notifications";
 
+// SignalR Hub URLs from environment variables
+const SIGNALR_BASE_URL = process.env.NEXT_PUBLIC_BACKEND_SIGNALR_URL || "https://discordclonebackend.onrender.com";
+const MEMBER_HUB_URL = `${SIGNALR_BASE_URL}/memberHub`;
+const CHANNEL_HUB_URL = `${SIGNALR_BASE_URL}/channelHub`;
+const SERVER_HUB_URL = `${SIGNALR_BASE_URL}/serverHub`;
+const MESSAGE_HUB_URL = `${SIGNALR_BASE_URL}/messageHub`;
+const DM_HUB_URL = `${SIGNALR_BASE_URL}/directMessageHub`;
+
 export default function SignalRProvider() {
   const dispatch = useDispatch();
   const servers = useSelector((state: RootState) => state.server.servers);
@@ -29,11 +37,11 @@ export default function SignalRProvider() {
     const startConnections = async () => {
       try {
         const connectionPromises = [
-          memberSignalRService.startConnection("https://localhost:7023/memberHub"),
-          channelSignalRService.startConnection("https://localhost:7023/channelHub"),
-          serverSignalRService.startConnection("https://localhost:7023/serverHub"),
-          messageSignalRService.startConnection("https://localhost:7023/messageHub"),
-          dmSignalRService.startConnection("https://localhost:7023/directMessageHub"),
+          memberSignalRService.startConnection(MEMBER_HUB_URL),
+          channelSignalRService.startConnection(CHANNEL_HUB_URL),
+          serverSignalRService.startConnection(SERVER_HUB_URL),
+          messageSignalRService.startConnection(MESSAGE_HUB_URL),
+          dmSignalRService.startConnection(DM_HUB_URL),
         ];
         await Promise.all(connectionPromises);
 

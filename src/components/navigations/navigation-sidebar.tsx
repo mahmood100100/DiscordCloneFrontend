@@ -36,10 +36,10 @@ const NavigationSidebar = () => {
         {activeServers && activeServers.length > 0 ? (
           activeServers.map((server: Server) => (
             <div key={server.id} className="mb-4">
-              <NavigationItem 
-                id={server.id} 
-                name={server.name} 
-                imageUrl={server.imageUrl} 
+              <NavigationItem
+                id={server.id}
+                name={server.name}
+                imageUrl={server.imageUrl}
               />
             </div>
           ))
@@ -48,11 +48,15 @@ const NavigationSidebar = () => {
         )}
       </ScrollArea>
       <div className='pb-3 mt-auto flex items-center flex-col gap-y-4'>
-        <ActionTooltip side="right" align='center' label="Toggle Theme">
-          <ModeToggle />
+        <ActionTooltip side="right" align='center' label="Themes">
+          <button tabIndex={0}>
+            <ModeToggle />
+          </button>
         </ActionTooltip>
-        <ActionTooltip side="right" align='center' label="User Menu">
-          <UserMenu image={profile.imageUrl} />
+        <ActionTooltip side="right" align='center' label= {profile.userName}>
+          <button tabIndex={0} >
+            <UserMenu username= {profile.userName} name= {profile.name} image={profile.imageUrl} />
+          </button>
         </ActionTooltip>
       </div>
     </div>
