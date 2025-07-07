@@ -53,7 +53,7 @@ export const PermissionsDisplay: React.FC<PermissionsDisplayProps> = ({
         )}
         <div className="flex flex-wrap gap-1">
           {permissions.map(permission => (
-            <Badge key={permission} variant="secondary" className="text-xs px-1 py-0.5">
+            <Badge key={permission} variant="secondary" className="text-xs px-1 py-0.5 max-w-full truncate">
               {getPermissionDisplayName(permission)}
             </Badge>
           ))}
