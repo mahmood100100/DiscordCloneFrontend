@@ -53,7 +53,7 @@ export const PermissionsDisplay: React.FC<PermissionsDisplayProps> = ({
         )}
         <div className="flex flex-wrap gap-1">
           {permissions.map(permission => (
-            <Badge key={permission} variant="secondary" className="text-xs">
+            <Badge key={permission} variant="secondary" className="text-xs px-1 py-0.5">
               {getPermissionDisplayName(permission)}
             </Badge>
           ))}
@@ -82,15 +82,15 @@ export const PermissionsDisplay: React.FC<PermissionsDisplayProps> = ({
                 {group.permissions.length}
               </Badge>
             </div>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
               {group.permissions.map(permission => (
                 <div
                   key={permission}
                   className="flex items-center gap-2 p-2 rounded-md bg-muted/50"
                 >
-                  <Check className="h-4 w-4 text-green-500 flex-shrink-0" />
+                  <Check className="h-3 w-3 sm:h-4 sm:w-4 text-green-500 flex-shrink-0" />
                   <div className="flex-1 min-w-0">
-                    <p className="text-sm font-medium truncate">
+                    <p className="text-xs sm:text-sm font-medium truncate">
                       {getPermissionDisplayName(permission)}
                     </p>
                     {showDescriptions && (
